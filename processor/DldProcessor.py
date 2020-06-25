@@ -51,7 +51,7 @@ class DldProcessor:
             tiff stack formats etc.
     """
 
-    def __init__(self, settings = None):
+    def __init__(self, settings=None):
         """ Create and manage a dask DataFrame from the data recorded at FLASH.
         """
 
@@ -66,8 +66,8 @@ class DldProcessor:
         self.initAttributes()
 
         # initialize attributes for metadata
-        self.sample = {} # this should contain 'name', 'sampleID', 'cleave number' etc...
-        
+        self.sample = {}  # this should contain 'name', 'sampleID', 'cleave number' etc...
+
         # set true to use the old binning method with arange, instead of
         # linspace
         self._LEGACY_BINNING = False
@@ -83,7 +83,7 @@ class DldProcessor:
                 
             Here ``False`` is the better choice, since it keeps better track of attributes.
         """
-        self.N_CORES = int(max(os.cpu_count()-1,1))
+        self.N_CORES = int(max(os.cpu_count() - 1, 1))
         self.UBID_OFFSET = int(0)
         self.CHUNK_SIZE = int(1000000)
         self.TOF_STEP_TO_NS = np.float64(0.020574)
@@ -98,7 +98,7 @@ class DldProcessor:
         self.DATA_RESULTS_DIR = str('/home/pg2user/DATA/results/')
 
         settings = ConfigParser()
-        if os.path.isfile( # TODO: please change this! ITS HORRIBLE
+        if os.path.isfile(  # TODO: please change this! ITS HORRIBLE
                 os.path.join(
                     os.path.dirname(__file__),
                     'SETTINGS.ini')):
@@ -118,9 +118,9 @@ class DldProcessor:
         for section in settings:
             for entry in settings[section]:
                 if _VERBOSE:
-                    print('trying: {} {}'.format(entry.upper(),settings[section][entry]))
+                    print('trying: {} {}'.format(entry.upper(), settings[section][entry]))
                 try:
-                    if settings[section][entry].upper() == 'FALSE': 
+                    if settings[section][entry].upper() == 'FALSE':
                         setattr(self, entry.upper(), False)
                     else:
                         _type = type(getattr(self, entry.upper()))
@@ -152,7 +152,7 @@ class DldProcessor:
         chan_dict = {}
         for chan in self.dd.columns:
             vals = self.dd[chan].compute()
-            clean=vals[np.isfinite(vals)]
+            clean = vals[np.isfinite(vals)]
             chan_dict[chan] = {}
             chan_dict[chan]['min'] = min(clean)
             chan_dict[chan]['max'] = max(clean)
@@ -163,23 +163,25 @@ class DldProcessor:
             chan_dict[chan]['len_nan'] = len(vals) - len(clean)
         return pd.DataFrame.from_dict(chan_dict).T
 
-    def load_settings(self,settings_file_name,preserve_path=True):
+    def load_settings(self, settings_file_name, preserve_path=True):
         """ load settings from an other saved setting file.
 
         To save settings simply copy paste the SETTINGS.ini file to the
         utilities/settings folder, and rename it. Use this name in this method
         to then load its content to the SETTINGS.ini file."""
         settings = ConfigParser()
-        if os.path.isfile(os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name+'.ini')):
-            settings.read(os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name+'.ini'))
-            #print('true: {}'.format(os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name+'.ini')))
+        if os.path.isfile(
+                os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name + '.ini')):
+            settings.read(os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name + '.ini'))
+            # print('true: {}'.format(os.path.join(os.path.dirname(__file__), 'utilities', 'settings', settings_file_name+'.ini')))
         else:
-            settings.read(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'utilities', 'settings', settings_file_name+'.ini'))
-            #print('false: {}'.format(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'utilities', 'settings', settings_file_name+'.ini')))
+            settings.read(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'utilities', 'settings',
+                                       settings_file_name + '.ini'))
+            # print('false: {}'.format(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'utilities', 'settings', settings_file_name+'.ini')))
         if len(settings.sections()) == 0:
             print('no settings found, ignoring.')
         else:
-            targetfile = os.path.join(os.path.dirname(os.path.dirname(__file__)),'SETTINGS.ini')
+            targetfile = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'SETTINGS.ini')
             if preserve_path:
                 old_settings = ConfigParser()
                 old_settings.read(targetfile)
@@ -190,36 +192,32 @@ class DldProcessor:
             # apply new settings to current processor
             self.initAttributes()
 
-
-
     def plot_diagnostics(self):
         """ Generates a plot of each available channel. usefull for diagnostics on data conditions"""
         cols = self.dd.columns
         import matplotlib.pyplot as plt
-        f,ax = plt.subplots(len(cols)//2,2,figsize=(15,20))
-        for i,chan in enumerate(self.dd.columns):
+        f, ax = plt.subplots(len(cols) // 2, 2, figsize=(15, 20))
+        for i, chan in enumerate(self.dd.columns):
             vals = self.dd[chan].compute()
             clean = vals[np.isfinite(vals)]
-            start,stop, mean = clean.min(), clean.max(), clean.mean()
+            start, stop, mean = clean.min(), clean.max(), clean.mean()
 
-            if np.abs((start-mean)/(stop-mean)) > 5:
-                start = stop-2*mean
-            elif np.abs((stop-mean)/(start-mean)) > 5:
-                stop = start + 2*mean 
-            
-            step =  max((stop-start)/1000,1)
-            x = self.addBinning(chan,start,stop,step)
+            if np.abs((start - mean) / (stop - mean)) > 5:
+                start = stop - 2 * mean
+            elif np.abs((stop - mean) / (start - mean)) > 5:
+                stop = start + 2 * mean
+
+            step = max((stop - start) / 1000, 1)
+            x = self.addBinning(chan, start, stop, step)
             res = self.computeBinnedData()
-            ax[i//2,i%2].set_title(chan,fontsize='x-large')
-            if len(res)>1:
+            ax[i // 2, i % 2].set_title(chan, fontsize='x-large')
+            if len(res) > 1:
                 try:
-                    ax[i//2,i%2].plot(x,res)
+                    ax[i // 2, i % 2].plot(x, res)
                 except ValueError:
-                    ax[i//2,i%2].plot(x,res[:-1])
+                    ax[i // 2, i % 2].plot(x, res[:-1])
 
             self.resetBins()
-        
-
 
     def readDataframes(self, fileName=None, path=None, format='parquet'):
         """ Load data from a parquet or HDF5 dataframe.
@@ -263,7 +261,7 @@ class DldProcessor:
             self.ddMicrobunches = dask.dataframe.read_hdf(
                 fullName, '/microbunches', mode='r', chunksize=self.CHUNK_SIZE)
 
-    def appendDataframeParquet(self, fileName, path = None):
+    def appendDataframeParquet(self, fileName, path=None):
         """ Append data to an existing dask Parquet dataframe.
 
         This can be used to concatenate multiple DAQ runs in one dataframe.
@@ -274,7 +272,8 @@ class DldProcessor:
                 name (including path) of the folder containing the
                 parquet files to append the new data.
         """
-        if type(fileName) == int: #if runNumber is given (only works if the run was prevously stored with default naming)
+        if type(
+                fileName) == int:  # if runNumber is given (only works if the run was prevously stored with default naming)
             fileName = 'run{}'.format(fileName)
         if path == None:
             path = self.DATA_PARQUET_DIR
@@ -282,7 +281,8 @@ class DldProcessor:
         newdd = dask.dataframe.read_parquet(fullName + "_el")
         self.dd = dask.dataframe.concat([self.dd, newdd], join='outer', interleave_partitions=True)
         newddMicrobunches = dask.dataframe.read_parquet(fullName + "_mb")
-        self.ddMicrobunches = dask.dataframe.concat([self.ddMicrobunches, newddMicrobunches], join='outer', interleave_partitions=True)
+        self.ddMicrobunches = dask.dataframe.concat([self.ddMicrobunches, newddMicrobunches], join='outer',
+                                                    interleave_partitions=True)
 
     def postProcess(self, bamCorrectionSign=0, kCenter=None):
         """ Apply corrections to the dataframe.
@@ -409,8 +409,8 @@ class DldProcessor:
         except ValueError:
             raise ValueError(
                 'No pump probe time bin, could not normalize to delay stage histogram.')
-    
-    def normalizeGMD(self,data_array,axis_name,axis_values):
+
+    def normalizeGMD(self, data_array, axis_name, axis_values):
         """ create the normalization array for normalizing to the FEL intensity at the GMD
         :Parameter:
             data_array: np.ndarray
@@ -429,9 +429,9 @@ class DldProcessor:
             idx = self.binNameList.index(axis_name)
 
             data_array_normalized = np.swapaxes(data_array, 0, idx)
-            
-            norm_array = self.make_GMD_histogram(axis_name,axis_values)
-            
+
+            norm_array = self.make_GMD_histogram(axis_name, axis_values)
+
             for i in range(np.ndim(data_array_normalized) - 1):
                 norm_array = norm_array[:, None]
             data_array_normalized = data_array_normalized / norm_array
@@ -442,19 +442,19 @@ class DldProcessor:
         except ValueError:
             raise ValueError('Failed the GMD normalization.')
 
-    def make_GMD_histogram(self,axis_name,axis_values): # TODO: improve performance... its deadly slow! 
+    def make_GMD_histogram(self, axis_name, axis_values):  # TODO: improve performance... its deadly slow!
 
-            gmd = np.nan_to_num(self.dd['gmdBda'].values.compute())
-            axisDataframe = self.dd[axis_name].values.compute()
+        gmd = np.nan_to_num(self.dd['gmdBda'].values.compute())
+        axisDataframe = self.dd[axis_name].values.compute()
 
-            norm_array = np.zeros(len(axis_values))
-            for j in range(0,len(gmd)):
-                if (gmd[j]>0):
-                    ind = np.argmin(np.abs(axis_values-axisDataframe[j]))
-                    norm_array[ind]+=gmd[j]
-            return norm_array
-    
-    def normalizeAxisMean(self,data_array,ax):
+        norm_array = np.zeros(len(axis_values))
+        for j in range(0, len(gmd)):
+            if (gmd[j] > 0):
+                ind = np.argmin(np.abs(axis_values - axisDataframe[j]))
+                norm_array[ind] += gmd[j]
+        return norm_array
+
+    def normalizeAxisMean(self, data_array, ax):
         """ Normalize to the mean of the given axis
         :Parameters:
             data_array: np.ndarray
@@ -472,7 +472,7 @@ class DldProcessor:
             idx = self.binNameList.index(ax)
             data_array_normalized = np.swapaxes(data_array, 0, idx)
             norm_array = data_array.mean(0)
-            norm_array = norm_array[None,:]
+            norm_array = norm_array[None, :]
 
             for i in range(np.ndim(data_array_normalized) - 2):
                 norm_array = norm_array[:, None]
@@ -483,53 +483,52 @@ class DldProcessor:
             return data_array_normalized
 
         except ValueError as e:
-            raise ValueError("Could not normalize to {} histogram.\n{}".format(ax,e))
+            raise ValueError("Could not normalize to {} histogram.\n{}".format(ax, e))
 
     def diagnostic_plot_FEL(self):
-        f,ax = plt.subplots(1,2)
+        f, ax = plt.subplots(1, 2)
         self.resetBins()
-        ubId = self.addBinning('dldMicrobunchId',1,500,1)
+        ubId = self.addBinning('dldMicrobunchId', 1, 500, 1)
         result_ubId = self.computeBinnedData()
-        ax[0].plot(ubId,result_ubId/max(result_ubId), label='Photoelectron count')
+        ax[0].plot(ubId, result_ubId / max(result_ubId), label='Photoelectron count')
         ax[0].set_title('Microbunch')
 
         self.resetBins()
 
         MbId_values = self.dd['macroBunchPulseId'].compute()
         clean = MbId_values[np.isfinite(MbId_values)]
-        start,stop, mean = clean.min(), clean.max(), clean.mean()
-        if np.abs((start-mean)/(stop-mean)) > 5:
-            start = stop-2*mean
-        elif np.abs((stop-mean)/(start-mean)) > 5:
-            stop = start + 2*mean 
-        step =  max((stop-start)/1000,1)
+        start, stop, mean = clean.min(), clean.max(), clean.mean()
+        if np.abs((start - mean) / (stop - mean)) > 5:
+            start = stop - 2 * mean
+        elif np.abs((stop - mean) / (start - mean)) > 5:
+            stop = start + 2 * mean
+        step = max((stop - start) / 1000, 1)
 
         if _VERBOSE:
             print("Be careful: resetting bins")
         else:
-            MbId = self.addBinning('macroBunchPulseId',start,stop,step)
+            MbId = self.addBinning('macroBunchPulseId', start, stop, step)
             result_MbId = self.computeBinnedData()
-            ax[1].plot(MbId,result_MbId/max(result_MbId), label='Photoelectron count')
+            ax[1].plot(MbId, result_MbId / max(result_MbId), label='Photoelectron count')
             ax[1].set_title('Macrobunch')
-
 
         gmd_values = np.nan_to_num(self.dd['gmdBda'].compute())
         ubId_values = self.dd['dldMicrobunchId'].compute()
 
         gmd_ubId = np.zeros_like(ubId)
-        for g,ub in zip(gmd_values,ubId_values):
+        for g, ub in zip(gmd_values, ubId_values):
             ub_idx = int(ub)
-            if 0<ub_idx<len(gmd_ubId):
-                gmd_ubId[ub_idx]+=g
+            if 0 < ub_idx < len(gmd_ubId):
+                gmd_ubId[ub_idx] += g
 
         gmd_MbId = np.zeros_like(MbId)
-        for g,Mb in zip(gmd_values,MbId_values):
+        for g, Mb in zip(gmd_values, MbId_values):
             Mb_idx = int(Mb)
-            if 0<Mb_idx<len(gmd_MbId):
-                gmd_MbId[Mb_idx]+=g
+            if 0 < Mb_idx < len(gmd_MbId):
+                gmd_MbId[Mb_idx] += g
 
-        ax[0].plot(ubId,gmd_ubId/max(gmd_ubId), label='GMD')
-        ax[1].plot(MbId,gmd_MbId/max(gmd_MbId)+1, label='GMD')
+        ax[0].plot(ubId, gmd_ubId / max(gmd_ubId), label='GMD')
+        ax[1].plot(MbId, gmd_MbId / max(gmd_MbId) + 1, label='GMD')
         for a in ax:
             a.legend()
             a.grid()
@@ -862,13 +861,14 @@ class DldProcessor:
         else:
             stepSize = (end - start) / steps
 
-#        axes = self.genBins(
-#            start + stepSize / 2,
-#            end - stepSize / 2,
-#            stepSize, useStepSize, forceEnds, include_last, force_legacy)
-#        if axes[-1] > end:
-#            axes = axes[:-1]
-        axes = np.array([np.mean((x,y)) for x,y in zip(bins[:-1],bins[1:])]) #TODO: could be improved for nonlinear scales
+        #        axes = self.genBins(
+        #            start + stepSize / 2,
+        #            end - stepSize / 2,
+        #            stepSize, useStepSize, forceEnds, include_last, force_legacy)
+        #        if axes[-1] > end:
+        #            axes = axes[:-1]
+        axes = np.array(
+            [np.mean((x, y)) for x, y in zip(bins[:-1], bins[1:])])  # TODO: could be improved for nonlinear scales
         self.binAxesList.append(axes)
         return axes
 
@@ -927,18 +927,18 @@ class DldProcessor:
                 idx = cols.tolist().index(binName)
                 colsToBin.append(idx)
 
-#            # create the array with the bins and bin ranges
-#            numBins = []
-#            ranges = []
-#            for i in range(0, len(colsToBin)):
-#                # need to subtract 1 from the number of bin ranges
-#                numBins.append(len(self.binRangeList[i]) - 1)
-#                ranges.append(
-#                    (self.binRangeList[i].min(),
-#                     self.binRangeList[i].max()))
-#            # now we are ready for the analysis with numpy:
-#            res, edges = np.histogramdd(
-#                vals[:, colsToBin], bins=numBins, range=ranges)
+            #            # create the array with the bins and bin ranges
+            #            numBins = []
+            #            ranges = []
+            #            for i in range(0, len(colsToBin)):
+            #                # need to subtract 1 from the number of bin ranges
+            #                numBins.append(len(self.binRangeList[i]) - 1)
+            #                ranges.append(
+            #                    (self.binRangeList[i].min(),
+            #                     self.binRangeList[i].max()))
+            #            # now we are ready for the analysis with numpy:
+            #            res, edges = np.histogramdd(
+            #                vals[:, colsToBin], bins=numBins, range=ranges)
             res, edges = np.histogramdd(vals[:, colsToBin], bins=self.binRangeList)
             return res
 
@@ -991,9 +991,9 @@ class DldProcessor:
     def computeBinnedArray(self, fast_mode=False):
         """returns a BinnedArray object of the binned data."""
         res = self.computeBinnedData()
-        return self.res_to_xarray(res,fast_mode=fast_mode)
+        return self.res_to_xarray(res, fast_mode=fast_mode)
 
-    def res_to_xarray(self,res,fast_mode=False):
+    def res_to_xarray(self, res, fast_mode=False):
         """ creates a BinnedArray (xarray subclass) out of the given np.array
         
         :Parameters:
@@ -1007,13 +1007,13 @@ class DldProcessor:
         """
         dims = self.binNameList
         coords = {}
-        for name,vals in zip(self.binNameList,self.binAxesList):
+        for name, vals in zip(self.binNameList, self.binAxesList):
             coords[name] = vals
-        
-        ba = BinnedArray(res,dims=dims,coords=coords)
-        
+
+        ba = BinnedArray(res, dims=dims, coords=coords)
+
         units = {}
-        default_units={'dldTime':'step','delayStage':'ps', 'pumpProbeDelay':'ps'}
+        default_units = {'dldTime': 'step', 'delayStage': 'ps', 'pumpProbeDelay': 'ps'}
         for name in self.binNameList:
             try:
                 u = default_units[name]
@@ -1023,16 +1023,16 @@ class DldProcessor:
         ba.attrs['units'] = units
 
         try:
-            start, stop = self.startEndTime[0],self.startEndTime[1]
+            start, stop = self.startEndTime[0], self.startEndTime[1]
         except AttributeError:
             if not fast_mode:
                 start, stop = self.dd['timeStamp'].min().compute(), self.dd['timeStamp'].max().compute()
             else:
-                start, stop = 0,1
+                start, stop = 0, 1
 
-        ba.attrs['timing'] = {'acquisition start':datetime.fromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S'),
-                              'acquisition stop':datetime.fromtimestamp(stop).strftime('%Y-%m-%d %H:%M:%S'),
-                              'acquisition duration':stop-start,
+        ba.attrs['timing'] = {'acquisition start': datetime.fromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S'),
+                              'acquisition stop': datetime.fromtimestamp(stop).strftime('%Y-%m-%d %H:%M:%S'),
+                              'acquisition duration': stop - start,
                               'bin array creation': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                               }
         ba.attrs['sample'] = self.sample
@@ -1045,39 +1045,38 @@ class DldProcessor:
             pulseIdFrom, pulseIdTo = self.pulseIdInterval[0], self.pulseIdInterval[1]
 
         ba.attrs['run'] = {
-                        'runNumber':self.runNumber,
-                        'macroBunchPulseIdInterval': [pulseIdFrom, pulseIdTo],
-                        'nMacrobunches': pulseIdTo-pulseIdFrom,
-                        }
+            'runNumber': self.runNumber,
+            'macroBunchPulseIdInterval': [pulseIdFrom, pulseIdTo],
+            'nMacrobunches': pulseIdTo - pulseIdFrom,
+        }
         try:
             ba.attrs['run']['nElectrons'] = self.numOfElectrons
             ba.attrs['run']['electronsPerMacrobunch'] = self.electronsPerMacrobunch,
         except:
-            pass #TODO: find smarter solution          
-              
+            pass  # TODO: find smarter solution
+
         ba.attrs['histograms'] = {}
 
         if hasattr(self, 'delaystageHistogram'):
-            ba.attrs['histograms']['delay'] = {'axis': 'delayStage', 'histogram':self.delaystageHistogram}
+            ba.attrs['histograms']['delay'] = {'axis': 'delayStage', 'histogram': self.delaystageHistogram}
         elif hasattr(self, 'pumpProbeHistogram'):
-            ba.attrs['histograms']['delay'] = {'axis': 'pumpProbeDelay', 'histogram':self.pumpProbeHistogram}
+            ba.attrs['histograms']['delay'] = {'axis': 'pumpProbeDelay', 'histogram': self.pumpProbeHistogram}
         if not fast_mode:
             try:
                 axis_values = []
-                ax_len=0
-                for ax,val in coords.items():
-                    if len(val)>ax_len:
+                ax_len = 0
+                for ax, val in coords.items():
+                    if len(val) > ax_len:
                         ax_len = len(val)
                         axis_name = ax
                         axis_values = val
 
-                GMD_norm = self.make_GMD_histogram(axis_name,axis_values)
-                ba.attrs['histograms']['GMD'] = {'axis': axis_name, 'histogram':GMD_norm}
+                GMD_norm = self.make_GMD_histogram(axis_name, axis_values)
+                ba.attrs['histograms']['GMD'] = {'axis': axis_name, 'histogram': GMD_norm}
             except Exception as e:
                 print("Couldn't find GMD channel for making GMD normalization histograms\nError: {}".format(e))
 
         return ba
-
 
     def computeBinnedDataMulti(self, saveName=None, savePath=None,
                                rank=None, size=None):

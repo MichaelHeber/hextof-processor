@@ -475,7 +475,6 @@ class DldFlashProcessor(DldProcessor.DldProcessor):
             self.ddMicrobunches.to_parquet(fileName + "_mb", compression="UNCOMPRESSED", \
                                            append=append, ignore_divisions=True)
         elif format in ['hdf5', 'h5']:
-            dask.dataframe.to_hdf(self.dd, fileName, '/electrons')
             dask.dataframe.to_hdf(self.ddMicrobunches, fileName, '/microbunches')
 
     def getIds(self, runNumber=None, path=None):

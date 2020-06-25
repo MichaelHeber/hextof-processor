@@ -1,6 +1,6 @@
 # Dev/Deployment
 numpy>=1.14.2
-pandas==0.20.3
+pandas>=0.20.3
 h5py>=2.7.1
 dask==0.17.3
 xarray>=0.9.6
