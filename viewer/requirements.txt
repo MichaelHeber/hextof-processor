@@ -1,0 +1,4 @@
+PyQt5>=5.15
+PyQt5-sip>=4.19.14
+pyqtgraph>=0.10.0
+qdarkstyle>=2.6.5

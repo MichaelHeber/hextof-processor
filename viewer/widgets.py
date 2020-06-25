@@ -19,24 +19,42 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-class FastScanMainWindow(QMainWindow):
+import sys, os
+import logging
+
+import pyqtgraph as pg
+
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtWidgets import QMainWindow, QDoubleSpinBox, \
+    QRadioButton, QLineEdit, QComboBox, QSizePolicy, \
+    QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QCheckBox, QPushButton, QGridLayout, QSpinBox, QLabel, QFrame
+from pyqtgraph.Qt import QtCore as pQtCore, QtGui as pQtGui
+
+
+class ViewerMainWindow(QMainWindow):
 
     def __init__(self):
-        super(FastScanMainWindow, self).__init__()
-        # self.logger = logging.getLogger('{}.FastScanMainWindow'.format(__name__))
-        # self.logger.info('Created MainWindow')
+        super(ViewerMainWindow, self).__init__()
+        self.logger = logging.getLogger('{}.FastScanMainWindow'.format(__name__))
+        self.logger.info('Created MainWindow')
 
         self.setWindowTitle('Hextof Viewer')
         self.setGeometry(100, 50, 1152, 768)
 
         self.status_bar = self.statusBar()
         self.status_bar.showMessage('ready')
-        # set the cool dark theme and other plotting settings
-        self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
 
-        pg.setConfigOption('background', (25, 35, 45))
-        pg.setConfigOption('foreground', 'w')
-        pg.setConfigOptions(antialias=True)
+        # set the cool dark theme and other plotting settings
+        try:
+            import qdarkstyle
+            self.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+            pg.setConfigOption('background', (25, 35, 45))
+            pg.setConfigOption('foreground', 'w')
+            pg.setConfigOptions(antialias=True)
+        except:
+            pass
+
 
     def setup_ui(self):
         central_widget = QWidget(self)
@@ -45,6 +63,8 @@ class FastScanMainWindow(QMainWindow):
         central_widget.setLayout(central_layout)
 
         self.input_box = QGroupBox('Select Run')
+
+
 
 def main():
     pass
