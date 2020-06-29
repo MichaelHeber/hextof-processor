@@ -3,7 +3,7 @@
 
 @author: Steinn Ymir Agustsson
 
-    Copyright (C) 2018 Steinn Ymir Agustsson
+    Copyright (C) 2020 Steinn Ymir Agustsson
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,14 +39,12 @@ class ViewerProcessor(DldFlashDataframeCreator.DldFlashProcessor):
             return True
         except:
             return False
-        # self._raw_data_path = None
 
-    # @property
-    # def raw_data_path(self):
-    #     return self._raw_data_path
-    # @raw_data_path.setter
-    # def raw_data_path(self,s):
-    #     self._raw_data_path = s
+    def addBinning_test(self, name, start, end, steps):
+        print(name, start, end, steps)
+
+    def addFilter_test(self, colname, lb=None, ub=None):
+            print(colname, lb, ub)
 
     def read_run(self):
         print(self.raw_data_path,

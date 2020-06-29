@@ -3,7 +3,7 @@
 
 @author: Steinn Ymir Agustsson
 
-    Copyright (C) 2018 Steinn Ymir Agustsson
+    Copyright (C) 2020 Steinn Ymir Agustsson
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -90,6 +90,10 @@ class ViewerMainWindow(QMainWindow):
         widget.setLayout(layout)
 
         layout.addWidget(self.make_data_select_box())
+        layout.addWidget(self.make_binning_box())
+        layout.addWidget(self.make_filter_box())
+
+
         layout.addStretch()
         return widget
 
@@ -125,8 +129,32 @@ class ViewerMainWindow(QMainWindow):
         self.read_run_button.clicked.connect(self.processor.read_run)
         self.read_run_button.setEnabled(self.processor.is_valid_run_number())
 
+        return widget
+
+    def make_binning_box(self):
+        widget = QGroupBox('Binning Parameters')
+        layout = QGridLayout()
+        widget.setLayout(layout)
+
+        self.binning_widget = BinningWidget('DldPosX')
+        layout.addWidget(self.binning_widget)
+        self.binning_widget.setBinning.connect(self.set_binning_parameters)
 
         return widget
+
+    def make_filter_box(self):
+        widget = QGroupBox('Filter Parameters')
+        layout = QGridLayout()
+        widget.setLayout(layout)
+
+        self.filter_widget = FilterWidget('DldMicrobunchId')
+        layout.addWidget(self.filter_widget)
+        self.filter_widget.setFilter.connect(self.set_filter_parameters)
+
+        return widget
+
+        addFilter(self, colname, lb=None, ub=None)
+
 
     def make_visual_widget(self):
         widget = QWidget()
@@ -134,6 +162,15 @@ class ViewerMainWindow(QMainWindow):
         widget.setLayout(layout)
         layout.addStretch()
         return widget
+
+    @QtCore.pyqtSlot(tuple)
+    def set_binning_parameters(self,pars):
+        print(pars)
+        self.processor.addBinning_test(*pars)
+
+    @QtCore.pyqtSlot(tuple)
+    def set_filter_parameters(self,pars):
+        self.processor.addFilter_test(*pars)
 
     @QtCore.pyqtSlot()
     def set_raw_data_path(self):
@@ -155,6 +192,75 @@ class ViewerMainWindow(QMainWindow):
     # @QtCore.pyqtSlot
     # def set_raw_data_path(self, s):
     #     self.processor.raw_data_path = s
+
+
+class BinningWidget(QWidget):
+
+    setBinning = QtCore.pyqtSignal(tuple)
+
+    def __init__(self,name):
+        super(BinningWidget, self).__init__()
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        self._name = name
+
+        self.name_label = QLabel(self._name)
+
+        self.range_from = QSpinBox()
+        self.range_to = QSpinBox()
+        self.range_step = QSpinBox()
+        self.set_button = QPushButton('Set')
+        self.set_button.clicked.connect(self.output)
+
+        layout.addWidget(self.name_label)
+        layout.addStretch()
+        layout.addWidget(QLabel('from: '))
+        layout.addWidget(self.range_from)
+        layout.addWidget(QLabel('to: '))
+        layout.addWidget(self.range_to)
+        layout.addWidget(QLabel('step: '))
+        layout.addWidget(self.range_step)
+        layout.addWidget(self.set_button)
+
+    def output(self):
+        name = self.name_label.text()
+        from_ = self.range_from.value()
+        to_ = self.range_to.value()
+        step = self.range_step.value()
+        sgnl = (name,from_,to_,step)
+        self.setBinning.emit(sgnl)
+
+class FilterWidget(QWidget):
+
+    setFilter = QtCore.pyqtSignal(tuple)
+
+    def __init__(self,name):
+        super(FilterWidget, self).__init__()
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        self._name = name
+
+        self.name_label = QLabel(self._name)
+
+        self.lower_limit = QSpinBox()
+        self.upper_limit = QSpinBox()
+
+        self.set_button = QPushButton('Set')
+        self.set_button.clicked.connect(self.output)
+
+        layout.addWidget(self.name_label)
+        layout.addStretch()
+        layout.addWidget(self.lower_limit)
+        layout.addWidget(QLabel('< x <: '))
+        layout.addWidget(self.upper_limit)
+        layout.addWidget(self.set_button)
+
+    def output(self):
+        sgnl = (self.name_label.text(),self.lower_limit.value(),self.upper_limit.value())
+        self.setFilter.emit(sgnl)
+
 
 
 def main():
